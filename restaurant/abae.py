@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import random
 import sys
@@ -11,8 +12,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 sys.path.append(os.path.dirname(sys.path[0]))
-from src.helpers import get_logger
-from src.word2vec import Word2vec
+from word2vec import Word2vec
 
 
 class ABAEDataset(torch.utils.data.Dataset):
@@ -101,6 +101,23 @@ class ABAE(nn.Module):
             ordered_words = sims.argsort(dim=-1, descending=True)[:top]
             aspects.append(ordered_words)
         return aspects
+
+def get_logger(log_file="timelog.log", file_level=logging.DEBUG, stdout_level=logging.DEBUG, logger_name=__name__):
+    logging.root.setLevel(0)
+    formatter = logging.Formatter('%(asctime)s %(levelname)5s- %(message)s', datefmt='%Y-%m-%d %H-%M-%S')
+    _logger = logging.getLogger(logger_name)
+
+    if log_file is not None and len(log_file) > 0:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(level=file_level)
+        file_handler.setFormatter(formatter)
+        _logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setLevel(level=stdout_level)
+    stream_handler.setFormatter(formatter)
+    _logger.addHandler(stream_handler)
+    return _logger
 
 
 def train_ABAE(word2vec, train_data, sent_len, neg_count, batch_size, aspect_size,
@@ -197,17 +214,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--train_epochs', type=int, default=15, help='number of epochs to train')
-    parser.add_argument('--batch_size', type=int, default=50, help='input batch size for training')
+    parser.add_argument('--batch_size', type=int, default=100, help='input batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='learning rate')
     parser.add_argument('--abae_regular', type=float, default=0.1)
     parser.add_argument('--lr_decay', type=float, default=0.99)
-    parser.add_argument('--data_dir', type=str, default='dataset/restaurant', help='dataset location')
+    parser.add_argument('--data_dir', type=str, default='datasets\\restaurant', help='dataset location')
     parser.add_argument('--vocab_size', type=int, default=9000, help='max size of vocab')
     parser.add_argument('--emb_dim', type=int, default=200, help='size of word vector')
     parser.add_argument('--max_length', type=int, default=20, help='max length of sentence')
     parser.add_argument('--neg_count', type=int, default=20, help='how many negative sample for a positive one.')
     parser.add_argument('--aspect_size', type=int, default=14, help='Aspect size.')
-    parser.add_argument('--save_path', type=str, default=os.path.join(sys.path[0], 'model/ABAE.pt'))
+    parser.add_argument('--save_path', type=str, default=os.path.join(sys.path[0], 'model\\ABAE.pt'))
     args = parser.parse_args()
 
     word2vec_path = os.path.join(sys.path[0], args.data_dir, 'w2v_embedding')
