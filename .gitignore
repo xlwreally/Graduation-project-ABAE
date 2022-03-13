@@ -1,0 +1,9 @@
+*.json
+*.pyc
+.idea
+*~
+*.w2v
+*.json*.txt
+*.log
+.hydra
+outputs
